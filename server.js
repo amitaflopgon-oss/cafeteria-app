@@ -1,12 +1,18 @@
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
+const path = require('path');
 
 const app = express();
-const PORT = 3000;
+
+// Usar el puerto de Render o el 3000 si estás local
+const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(cors());
+
+// Servir los archivos web de la carpeta "public" (index.html, css, js)
+app.use(express.static(path.join(__dirname, 'public')));
 
 const db = new sqlite3.Database('./cafeteria.db', (err) => {
   if (err) {
@@ -107,6 +113,11 @@ app.put('/api/menu/:id', (req, res) => {
   });
 });
 
+// Ruta comodín para servir el frontend
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 process.on('SIGINT', () => {
   db.close(() => {
     console.log('Conexión con SQLite cerrada.');
@@ -114,6 +125,6 @@ process.on('SIGINT', () => {
   });
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Backend escuchando en http://0.0.0.0:${PORT}`);
+app.listen(PORT, () => {
+  console.log(`Backend escuchando en el puerto ${PORT}`);
 });
