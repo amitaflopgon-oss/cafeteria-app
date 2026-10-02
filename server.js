@@ -113,8 +113,8 @@ app.put('/api/menu/:id', (req, res) => {
   });
 });
 
-// Ruta comodín compatible para servir el frontend
-app.get('/*', (req, res) => {
+// Ruta comodín para Express 5
+app.get(/(.*)/, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
