@@ -68,7 +68,17 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// Endpoint: Registrar usuario (Sintaxis corregida con VALUES)
+// Endpoint: Obtener todos los usuarios
+app.get('/api/usuarios', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT id, usuario FROM usuarios ORDER BY id ASC');
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Endpoint: Registrar/Agregar nuevo usuario
 app.post('/api/usuarios', async (req, res) => {
   const { usuario, password } = req.body;
   if (!usuario || !password) return res.status(400).json({ error: 'Usuario y contraseña requeridos' });
