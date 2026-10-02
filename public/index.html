@@ -121,11 +121,18 @@
     </div>
 
 </div>
-
 <script>
-    const API_LOGIN = '/api/login';
-    const API_USUARIOS = '/api/usuarios';
-    const API_MENU = '/api/menu';
+    // Detecta si la página está corriendo en Render o en IIS/Local
+    const isRender = window.location.hostname.includes('onrender.com');
+
+    // En Render usa rutas relativas; en IIS/Local apunta al puerto 3000 de Node.js
+    const BASE_URL = isRender 
+        ? '' 
+        : `${window.location.protocol}//${window.location.hostname}:3000`;
+
+    const API_LOGIN = `${BASE_URL}/api/login`;
+    const API_USUARIOS = `${BASE_URL}/api/usuarios`;
+    const API_MENU = `${BASE_URL}/api/menu`;
 
     let productosLista = [];
 
@@ -152,7 +159,7 @@
                 msg.innerText = data.mensaje || 'Credenciales incorrectas';
             }
         } catch (err) {
-            msg.innerText = 'Error al conectar con el servidor';
+            msg.innerText = 'Error de conexión. Asegúrate de que Node.js esté corriendo (node server.js).';
         }
     }
 
@@ -191,14 +198,12 @@
         if (!nombre || !precio) return alert('Completa nombre y precio');
 
         if (id) {
-            // Editar producto existente (PUT)
             await fetch(`${API_MENU}/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ nombre, descripcion, precio: parseFloat(precio) })
             });
         } else {
-            // Crear nuevo producto (POST)
             await fetch(API_MENU, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -257,5 +262,6 @@
         }
     }
 </script>
+
 </body>
 </html>
