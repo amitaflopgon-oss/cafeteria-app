@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cafetería - Gestión Completa</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+        body { background-color: var(--bg); color: var(--text-main); padding: 40px 20px; min-height: 100vh; }
+        .main-container { max-width: 900px; margin: 0 auto; }
+        
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 28px;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
+            border: 1px solid var(--border);
+        }
+
+        .login-card { max-width: 400px; margin: 80px auto; text-align: center; }
+        .login-card h2 { margin-bottom: 20px; color: var(--primary); }
+        .login-card input { margin-bottom: 15px; }
+
+        .hidden { display: none !important; }
+
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h1 { font-size: 2rem; color: var(--primary); }
+
+        .form-grid { display: grid; grid-template-columns: 2fr 2fr 1fr auto; gap: 12px; }
+        .form-grid-user { display: grid; grid-template-columns: 2fr 2fr auto; gap: 12px; }
+        
+        input { width: 100%; padding: 12px 16px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 0.9rem; outline: none; }
+        input:focus { border-color: var(--primary); }
+
+        .btn { background-color: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 10px; font-weight: 600; cursor: pointer; width: 100%; }
+        .btn:hover { background-color: var(--primary-hover); }
+        .btn-edit { background-color: var(--warning); padding: 6px 12px; border-radius: 6px; width: auto; font-size: 0.8rem; }
+        .btn-cancel { background-color: var(--text-muted); }
+
+        .user-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .btn-logout { background: var(--error); width: auto; padding: 8px 16px; }
+
+        table { width: 100%; border-collapse: collapse; background: white; margin-top: 10px; }
+        th, td { padding: 14px; border-bottom: 1px solid var(--border); text-align: left; }
+        th { background: #f1f5f9; color: var(--text-muted); font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+
+<div class="main-container">
+
+    <!-- LOGIN -->
+    <div id="section-login" class="card login-card">
+        <h2>🔒 Iniciar Sesión</h2>
+        <input type="text" id="login-user" placeholder="Usuario (ej. admin)">
+        <input type="password" id="login-pass" placeholder="Contraseña (ej. 1234)">
+        <button class="btn" onclick="iniciarSesion()">Ingresar</button>
+        <p id="login-msg" style="color: var(--error); margin-top: 15px; font-size: 0.85rem;"></p>
+    </div>
+
+    <!-- PANEL PRINCIPAL -->
+    <div id="section-app" class="hidden">
+        <div class="user-bar">
+            <span>Bienvenido, <strong id="lbl-usuario">Admin</strong></span>
+            <button class="btn btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
+        </div>
+
+        <div class="header">
+            <h1>☕ Menú de Cafetería</h1>
+            <p>Gestión de Productos y Usuarios</p>
+        </div>
+
+        <!-- AGREGAR/EDITAR PRODUCTO -->
+        <div class="card">
+            <h3 id="form-product-title">➕ Registrar Producto</h3>
+            <input type="hidden" id="prod-id">
+            <div class="form-grid" style="margin-top: 15px;">
+                <input type="text" id="nombre" placeholder="Nombre">
+                <input type="text" id="descripcion" placeholder="Descripción">
+                <input type="number" id="precio" placeholder="Precio ($)">
+                <button class="btn" id="btn-save-prod" onclick="guardarProducto()">Guardar</button>
+            </div>
+            <button class="btn btn-cancel hidden" id="btn-cancel-edit" onclick="cancelarEdicion()" style="margin-top: 10px; width: auto;">Cancelar Edición</button>
+        </div>
+
+        <!-- NUEVO USUARIO -->
+        <div class="card">
+            <h3>👤 Crear Nuevo Usuario / Cliente</h3>
+            <div class="form-grid-user" style="margin-top: 15px;">
+                <input type="text" id="new-user" placeholder="Nuevo Usuario">
+                <input type="password" id="new-pass" placeholder="Nueva Contraseña">
+                <button class="btn" onclick="crearUsuario()">Crear Usuario</button>
+            </div>
+        </div>
+
+        <!-- TABLA DE PRODUCTOS -->
+        <div class="card">
+            <h3>📦 Productos Registrados</h3>
+            <table>
+                <thead>
+                    <tr><th>ID</th><th>Producto</th><th>Descripción</th><th>Precio</th><th>Acción</th></tr>
+                </thead>
+                <tbody id="tabla-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const SERVER_IP = window.location.hostname;
+    const API_LOGIN = `http://${SERVER_IP}:3000/api/login`;
+    const API_USUARIOS = `http://${SERVER_IP}:3000/api/usuarios`;
+    const API_MENU = `http://${SERVER_IP}:3000/api/menu`;
+
+    let productosLista = [];
+
+    async function iniciarSesion() {
+        const usuario = document.getElementById('login-user').value;
+        const password = document.getElementById('login-pass').value;
+        const msg = document.getElementById('login-msg');
+
+        try {
+            const res = await fetch(API_LOGIN, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ usuario, password })
+            });
+
+            const data = await res.json();
+
+            if (res.ok && data.exito) {
+                document.getElementById('section-login').classList.add('hidden');
+                document.getElementById('section-app').classList.remove('hidden');
+                document.getElementById('lbl-usuario').innerText = data.usuario;
+                cargarMenu();
+            } else {
+                msg.innerText = data.mensaje || 'Credenciales incorrectas';
+            }
+        } catch (err) {
+            msg.innerText = 'Error de conexión con el servidor (Puerto 3000)';
+        }
+    }
+
+    function cerrarSesion() {
+        document.getElementById('section-login').classList.remove('hidden');
+        document.getElementById('section-app').classList.add('hidden');
+        document.getElementById('login-pass').value = '';
+    }
+
+    async function cargarMenu() {
+        const res = await fetch(API_MENU);
+        productosLista = await res.json();
+        const tbody = document.getElementById('tabla-body');
+        tbody.innerHTML = '';
+
+        productosLista.forEach(p => {
+            tbody.innerHTML += `
+                <tr>
+                    <td>#${p.id}</td>
+                    <td><strong>${p.nombre}</strong></td>
+                    <td>${p.descripcion || '-'}</td>
+                    <td>$${parseFloat(p.precio).toFixed(2)}</td>
+                    <td>
+                        <button class="btn btn-edit" onclick="prepararEdicion(${p.id})">✏️ Editar</button>
+                    </td>
+                </tr>`;
+        });
+    }
+
+    async function guardarProducto() {
+        const id = document.getElementById('prod-id').value;
+        const nombre = document.getElementById('nombre').value;
+        const descripcion = document.getElementById('descripcion').value;
+        const precio = document.getElementById('precio').value;
+
+        if (!nombre || !precio) return alert('Completa nombre y precio');
+
+        if (id) {
+            // Editar producto existente (PUT)
+            await fetch(`${API_MENU}/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nombre, descripcion, precio: parseFloat(precio) })
+            });
+        } else {
+            // Crear nuevo producto (POST)
+            await fetch(API_MENU, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nombre, descripcion, precio: parseFloat(precio) })
+            });
+        }
+
+        cancelarEdicion();
+        cargarMenu();
+    }
+
+    function prepararEdicion(id) {
+        const p = productosLista.find(prod => prod.id === id);
+        if (!p) return;
+
+        document.getElementById('prod-id').value = p.id;
+        document.getElementById('nombre').value = p.nombre;
+        document.getElementById('descripcion').value = p.descripcion || '';
+        document.getElementById('precio').value = p.precio;
+
+        document.getElementById('form-product-title').innerText = '✏️ Editar Producto';
+        document.getElementById('btn-save-prod').innerText = 'Actualizar';
+        document.getElementById('btn-cancel-edit').classList.remove('hidden');
+    }
+
+    function cancelarEdicion() {
+        document.getElementById('prod-id').value = '';
+        document.getElementById('nombre').value = '';
+        document.getElementById('descripcion').value = '';
+        document.getElementById('precio').value = '';
+
+        document.getElementById('form-product-title').innerText = '➕ Registrar Producto';
+        document.getElementById('btn-save-prod').innerText = 'Guardar';
+        document.getElementById('btn-cancel-edit').classList.add('hidden');
+    }
+
+    async function crearUsuario() {
+        const usuario = document.getElementById('new-user').value;
+        const password = document.getElementById('new-pass').value;
+
+        if (!usuario || !password) return alert('Ingresa usuario y contraseña');
+
+        const res = await fetch(API_USUARIOS, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ usuario, password })
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+            alert(`Usuario '${usuario}' creado con éxito.`);
+            document.getElementById('new-user').value = '';
+            document.getElementById('new-pass').value = '';
+        } else {
+            alert(data.error || 'Error al crear usuario.');
+        }
+    }
+</script>
+
+</body>
+</html>
