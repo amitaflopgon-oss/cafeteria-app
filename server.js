@@ -68,13 +68,16 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// Endpoint: Registrar usuario
+// Endpoint: Registrar usuario (Sintaxis corregida con VALUES)
 app.post('/api/usuarios', async (req, res) => {
   const { usuario, password } = req.body;
   if (!usuario || !password) return res.status(400).json({ error: 'Usuario y contraseña requeridos' });
 
   try {
-    const result = await pool.query('INSERT INTO usuarios (usuario, password) RETURNING id, usuario', [usuario, password]);
+    const result = await pool.query(
+      'INSERT INTO usuarios (usuario, password) VALUES ($1, $2) RETURNING id, usuario',
+      [usuario, password]
+    );
     res.json(result.rows[0]);
   } catch (err) {
     if (err.code === '23505') return res.status(400).json({ error: 'El nombre de usuario ya existe' });
