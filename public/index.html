@@ -123,10 +123,9 @@
 </div>
 
 <script>
-    const SERVER_IP = window.location.hostname;
-    const API_LOGIN = `http://${SERVER_IP}:3000/api/login`;
-    const API_USUARIOS = `http://${SERVER_IP}:3000/api/usuarios`;
-    const API_MENU = `http://${SERVER_IP}:3000/api/menu`;
+    const API_LOGIN = '/api/login';
+    const API_USUARIOS = '/api/usuarios';
+    const API_MENU = '/api/menu';
 
     let productosLista = [];
 
@@ -153,7 +152,7 @@
                 msg.innerText = data.mensaje || 'Credenciales incorrectas';
             }
         } catch (err) {
-            msg.innerText = 'Error de conexión con el servidor (Puerto 3000)';
+            msg.innerText = 'Error al conectar con el servidor';
         }
     }
 
